@@ -525,7 +525,7 @@
 
         setupEventListeners() {
             // 搜索输入监听
-            const searchInput = document.getElementById('search-input');
+                    const searchInput = document.getElementById('search-input');
             if (searchInput) {
                 searchInput.addEventListener('input', () => {
                     this.filters.query = searchInput.value;
@@ -596,7 +596,7 @@
                 this.showEmptyState();
                 return;
             }
-
+            
             let html = '';
             papers.forEach(paper => {
                 html += this.createPaperCard(paper);
@@ -624,19 +624,19 @@
             return `
                 <div class="col-12 mb-4">
                     <div class="card paper-card">
-                        <div class="card-body">
+                <div class="card-body">
                             <h5 class="card-title">${this.escapeHtml(title)}</h5>
                             <p class="card-text authors">${this.escapeHtml(authors)}</p>
                             <div class="mb-2">
                                 ${category ? `<span class="badge bg-primary">${this.escapeHtml(category)}</span>` : ''}
                                 ${has_code ? '<span class="badge bg-success">Code Available</span>' : ''}
-                            </div>
-                            
+                    </div>
+                    
                             ${summary ? `
                                 <div class="paper-summary mb-3">
                                     <h6>Summary:</h6>
                                     <p>${this.escapeHtml(summary)}</p>
-                                </div>
+                        </div>
                             ` : ''}
                             
                             ${key_points && key_points.length > 0 ? `
@@ -644,7 +644,7 @@
                                     <h6>Key Points:</h6>
                                     <ul>
                                         ${key_points.map(point => `<li>${this.escapeHtml(point)}</li>`).join('')}
-                                    </ul>
+                                        </ul>
                                 </div>
                             ` : ''}
                             
@@ -655,8 +655,8 @@
                                     Published: ${new Date(published).toLocaleDateString()} | 
                                     Citations: ${citations}
                                 </small>
-                            </div>
-                            
+                    </div>
+                    
                             <div class="paper-links mt-2">
                                 ${pdf_url ? `
                                     <a href="${pdf_url}" target="_blank" class="btn btn-sm btn-outline-primary">
@@ -670,10 +670,10 @@
                                     </a>
                                 ` : ''}
                             </div>
-                        </div>
-                    </div>
+                                </div>
                 </div>
-            `;
+            </div>
+        `;
         }
 
         escapeHtml(str) {
@@ -681,28 +681,28 @@
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
-        }
-
-        showLoading() {
+    }
+    
+    showLoading() {
             this.listContainer.innerHTML = `
                 <div class="col-12 text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading papers...</span>
-                    </div>
-                    <p class="mt-3 text-muted">Loading papers...</p>
                 </div>
-            `;
-        }
-
-        showError(message) {
+                    <p class="mt-3 text-muted">Loading papers...</p>
+            </div>
+        `;
+    }
+    
+    showError(message) {
             this.listContainer.innerHTML = `
                 <div class="col-12">
-                    <div class="alert alert-danger" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        ${message}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ${message}
                     </div>
-                </div>
-            `;
+            </div>
+        `;
         }
 
         showEmptyState() {
@@ -723,20 +723,20 @@
     }
 
     // 在 EnhancedPaperList 类之后，初始化代码之前添加
-    class TrendsVisualizer {
+class TrendsVisualizer {
         constructor(containerId, api) {
-            this.container = document.getElementById(containerId);
+        this.container = document.getElementById(containerId);
             this.api = api;
             this.chart = null;
-        }
-
-        async loadTrends(days = 30) {
-            try {
-                this.showLoading();
+    }
+    
+    async loadTrends(days = 30) {
+        try {
+            this.showLoading();
                 const data = await this.api.getTrends(days);
                 this.renderTrends(data);
-            } catch (error) {
-                console.error('Error loading trends:', error);
+        } catch (error) {
+            console.error('Error loading trends:', error);
                 this.showError('Failed to load trends data');
             }
         }
@@ -751,24 +751,24 @@
             const keywordsData = this.prepareKeywordsData(data);
 
             this.container.innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-6">
                         <div class="card">
-                            <div class="card-body">
+                        <div class="card-body">
                                 <h5 class="card-title">Papers by Category</h5>
                                 <canvas id="categoryChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Top Keywords</h5>
-                                <canvas id="keywordsChart"></canvas>
-                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                        <div class="card">
+                        <div class="card-body">
+                                <h5 class="card-title">Top Keywords</h5>
+                                <canvas id="keywordsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
             `;
 
             this.renderCategoryChart(categoryData);
@@ -800,30 +800,30 @@
             }
 
             this.categoryChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
+            type: 'pie',
+            data: {
                     labels: data.labels,
-                    datasets: [{
+                datasets: [{
                         data: data.values,
-                        backgroundColor: [
+                    backgroundColor: [
                             '#FF6384',
                             '#36A2EB',
                             '#FFCE56',
                             '#4BC0C0'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
                             position: 'bottom'
-                        }
                     }
                 }
-            });
-        }
-
+            }
+        });
+    }
+    
         renderKeywordsChart(data) {
             const ctx = document.getElementById('keywordsChart');
             if (this.keywordsChart) {
@@ -831,46 +831,46 @@
             }
 
             this.keywordsChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
+            type: 'bar',
+            data: {
                     labels: data.labels,
-                    datasets: [{
+                datasets: [{
                         label: 'Frequency',
                         data: data.values,
                         backgroundColor: '#36A2EB'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
                             beginAtZero: true
-                        }
                     }
                 }
-            });
-        }
-
-        showLoading() {
+            }
+        });
+    }
+    
+    showLoading() {
             this.container.innerHTML = `
                 <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading trends...</span>
-                    </div>
+                </div>
                     <p class="mt-3 text-muted">Loading trends data...</p>
-                </div>
-            `;
-        }
-
-        showError(message) {
-            this.container.innerHTML = `
-                <div class="alert alert-danger" role="alert">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    ${message}
-                </div>
-            `;
-        }
+            </div>
+        `;
     }
+    
+    showError(message) {
+            this.container.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+}
 
     // 最后是初始化代码
     document.addEventListener('DOMContentLoaded', function() {
@@ -900,7 +900,7 @@
                             if (targetSection === 'trends') {
                                 trendsVisualizer.loadTrends(30);
                             }
-                        } else {
+                } else {
                             section.classList.add('d-none');
                         }
                     });
@@ -909,7 +909,7 @@
 
             // 初始加载论文
             paperList.loadPapers();
-
+            
         } catch (error) {
             console.error('Error initializing application:', error);
         }

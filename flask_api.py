@@ -13,6 +13,11 @@ import sqlite3
 from database_manager import PaperDatabaseManager
 from main_controller import PapersAgentController, DEFAULT_CONFIG
 
+# 导入PaperAnalyzer和add_analyzer_endpoints
+from paper_summary_comparison import PaperAnalyzer, add_analyzer_endpoints
+
+
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -28,6 +33,59 @@ logger = logging.getLogger(__name__)
 db_manager = PaperDatabaseManager()
 controller = PapersAgentController(DEFAULT_CONFIG)
 
+# 在 flask_api.py 文件中
+
+# 首先导入所有需要的模块
+from flask import Flask, request, jsonify, send_from_directory, render_template
+import os
+import json
+import datetime
+from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_cors import CORS
+import pandas as pd
+import threading
+import logging
+
+# 导入数据库管理器
+from database_manager import PaperDatabaseManager
+
+# 导入控制器
+from main_controller import PapersAgentController, DEFAULT_CONFIG
+
+# 导入论文分析器
+from paper_summary_comparison import PaperAnalyzer, add_analyzer_endpoints
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("api_server.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# 初始化 Flask 应用
+app = Flask(__name__, 
+            static_folder='static',
+            template_folder='templates')
+CORS(app)  # 启用 CORS
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
+# 初始化数据库管理器
+db_manager = PaperDatabaseManager()
+
+# 初始化控制器
+controller = PapersAgentController(DEFAULT_CONFIG)
+
+# 初始化论文分析器
+analyzer = PaperAnalyzer(db_manager=db_manager)
+
+# 添加分析器端点
+add_analyzer_endpoints(app, analyzer)
+
+# 然后是其他 API 路由和代码...
 # 初始化数据库函数
 def initialize_database():
     try:

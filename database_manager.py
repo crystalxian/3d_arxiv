@@ -259,7 +259,7 @@ class PaperDatabaseManager:
                 
         return list(keywords)
         
-    def search_papers(self, query=None, days=None, category=None, has_code=None, limit=50, offset=0):
+    def search_papers(self, query=None, days=None, category=None, has_code=None, limit=1000, offset=0):
         """搜索论文"""
         try:
             logger.info(f"Searching papers with params: query='{query}', days={days}, "
@@ -268,15 +268,16 @@ class PaperDatabaseManager:
             conn = sqlite3.connect(self.db_path)
             logger.debug(f"Connected to database: {self.db_path}")
             
-            # 构建基础查询
-            query_parts = ["SELECT DISTINCT p.*"]
+            # 构建基础查询，始终关联分类表和关键点表
+            query_parts = ["SELECT DISTINCT p.*, pc.category, pc.confidence, GROUP_CONCAT(pkp.point) as key_points"]
             from_parts = ["FROM papers p"]
+            from_parts.append("LEFT JOIN paper_categories pc ON p.id = pc.paper_id")
+            from_parts.append("LEFT JOIN paper_key_points pkp ON p.id = pkp.paper_id")
             where_parts = ["1=1"]
             params = []
             
             # 添加分类过滤
             if category:
-                from_parts.append("LEFT JOIN paper_categories pc ON p.id = pc.paper_id")
                 where_parts.append("pc.category = ?")
                 params.append(category)
             
@@ -300,11 +301,12 @@ class PaperDatabaseManager:
                 where_parts.append("p.has_code = ?")
                 params.append(1 if has_code else 0)
             
-            # 组合SQL
+            # 组合SQL，添加 GROUP BY
             sql = f"""
                 {' '.join(query_parts)}
                 {' '.join(from_parts)}
                 WHERE {' AND '.join(where_parts)}
+                GROUP BY p.id
                 ORDER BY p.published DESC, p.citations DESC
                 LIMIT ? OFFSET ?
             """
@@ -327,13 +329,25 @@ class PaperDatabaseManager:
                 'has_code': False,
                 'citations': 0,
                 'summary': '',
-                'key_points': '[]'  # 空的JSON数组字符串
+                'key_points': ''
             })
             
-            # 确保key_points是列表
-            df['key_points'] = df['key_points'].apply(lambda x: 
-                json.loads(x) if isinstance(x, str) else ([] if pd.isna(x) else x)
-            )
+            # 修改 key_points 处理逻辑
+            def process_key_points(x):
+                if pd.isna(x) or not x:
+                    return []
+                if isinstance(x, list):
+                    return x
+                try:
+                    if isinstance(x, str):
+                        if not x.strip():
+                            return []
+                        return x.split(',')
+                    return []
+                except:
+                    return []
+            
+            df['key_points'] = df['key_points'].apply(process_key_points)
             
             conn.close()
             return df

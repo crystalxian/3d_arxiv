@@ -15,6 +15,16 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+def setup_directories():
+    """Create necessary directories if they don't exist"""
+    dirs = ['data', 'logs', 'static', 'static/charts']
+    for dir_path in dirs:
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+# Create directories before configuring logging
+setup_directories()
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -25,14 +35,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-def setup_directories():
-    """Create necessary directories if they don't exist"""
-    dirs = ['data', 'logs', 'static', 'static/charts']
-    for dir_path in dirs:
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-            logger.info(f"Created directory: {dir_path}")
 
 def run_server(debug=False, start_scheduler=False):
     """Run the Flask web server"""
