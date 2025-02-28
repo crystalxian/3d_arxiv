@@ -730,6 +730,155 @@ class TrendsVisualizer {
             this.chart = null;
     }
     
+    // 改进TrendsVisualizer类中的createTimeTrendChart方法，使用真实数据
+async createTimeTrendChart(periodDays) {
+    try {
+        // 获取过去一段时间内的论文分布数据
+        const response = await fetch(`/api/stats/papers-by-date?days=${periodDays}`);
+        
+        if (!response.ok) {
+            // 如果API不可用，回退到使用模拟数据
+            this._createMockTimeTrendChart(periodDays);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // 解析API返回的日期和计数数据
+        const dates = Object.keys(data).sort();
+        const counts = dates.map(date => data[date]);
+        
+        // 如果没有足够的数据点，回退到模拟数据
+        if (dates.length < 2) {
+            this._createMockTimeTrendChart(periodDays);
+            return;
+        }
+        
+        // 创建时间趋势图表
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        
+        // 销毁已存在的图表
+        if (this.charts.trend) {
+            this.charts.trend.destroy();
+        }
+        
+        this.charts.trend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates.map(date => new Date(date).toLocaleDateString()),
+                datasets: [{
+                    label: 'Papers Published',
+                    data: counts,
+                    borderColor: '#4285F4',
+                    backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Papers Published Over Time'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Papers'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error creating time trend chart:', error);
+        // 回退到模拟数据
+        this._createMockTimeTrendChart(periodDays);
+    }
+}
+
+// 添加模拟时间趋势图表的私有方法
+_createMockTimeTrendChart(periodDays) {
+    // 生成模拟数据的代码（保留原有的模拟数据逻辑）
+    const labels = [];
+    const data = [];
+    
+    // 生成过去periodDays天的日期
+    const days = periodDays || 30;
+    const endDate = new Date();
+    
+    // 生成7个数据点
+    const step = Math.max(1, Math.floor(days / 7));
+    
+    for (let i = days; i >= 0; i -= step) {
+        const date = new Date();
+        date.setDate(endDate.getDate() - i);
+        labels.push(date.toLocaleDateString());
+        
+        // 模拟数据（上升趋势）
+        const baseValue = 5;
+        const randomVariation = Math.random() * 3;
+        const trendIncrease = (days - i) / days * 7; // 上升趋势
+        data.push(Math.round(baseValue + randomVariation + trendIncrease));
+    }
+    
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    
+    // 销毁已存在的图表
+    if (this.charts.trend) {
+        this.charts.trend.destroy();
+    }
+    
+    this.charts.trend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Papers Published',
+                data: data,
+                borderColor: '#4285F4',
+                backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Papers Published Over Time (Estimated)'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Papers'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+}
+
     async loadTrends(days = 30) {
         try {
             this.showLoading();

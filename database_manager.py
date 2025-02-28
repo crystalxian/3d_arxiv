@@ -82,16 +82,11 @@ class PaperDatabaseManager:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_subscriptions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT NOT NULL,
-            topic TEXT,
+            email TEXT NOT NULL,
+            topic TEXT NOT NULL,
             frequency TEXT DEFAULT 'daily',
-            format TEXT DEFAULT 'email',
-            email TEXT,
-            webhook_url TEXT,
-            wechat_id TEXT,
-            last_sent TIMESTAMP,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            active BOOLEAN DEFAULT 1
+            active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         ''')
         

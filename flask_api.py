@@ -45,6 +45,7 @@ from flask_cors import CORS
 import pandas as pd
 import threading
 import logging
+import re  # 添加这行
 
 # 导入数据库管理器
 from database_manager import PaperDatabaseManager
@@ -297,37 +298,92 @@ def get_subscriptions():
         logger.error(f"Error getting subscriptions: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
+# 添加邮件发送相关的导入
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
+import os
+
+# 添加邮件配置
+# 修改邮件配置部分
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USERNAME = os.environ.get('EMAIL_USERNAME')  # 修改这里
+SMTP_PASSWORD = os.environ.get('EMAIL_PASSWORD')  # 修改这里
+
+def send_confirmation_email(email, topic):
+    """发送订阅确认邮件"""
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SMTP_USERNAME
+        msg['To'] = email
+        msg['Subject'] = "确认您的 3DGenPapersBot 订阅"
+        
+        body = f"""
+        感谢您订阅 3DGenPapersBot！
+        
+        您已成功订阅以下主题的更新：
+        {topic}
+        
+        您将定期收到相关论文的更新通知。
+        
+        如需退订，请点击：[退订链接]
+        
+        祝您使用愉快！
+        3DGenPapersBot 团队
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+            
+        return True
+    except Exception as e:
+        logger.error(f"发送确认邮件失败: {e}")
+        return False
+
 @app.route('/api/subscriptions', methods=['POST'])
 def create_subscription():
-    """Create a new subscription"""
+    """创建新的订阅"""
     try:
         data = request.json
         
         if not data:
-            return jsonify({'error': 'No data provided'}), 400
+            return jsonify({'error': '没有提供数据'}), 400
             
-        required_fields = ['user_id', 'topic', 'format']
+        required_fields = ['email', 'topic', 'frequency']
         for field in required_fields:
             if field not in data:
-                return jsonify({'error': f'Missing required field: {field}'}), 400
-                
-        # Create subscription
+                return jsonify({'error': f'缺少必要字段: {field}'}), 400
+        
+        # 验证邮箱格式
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", data['email']):
+            return jsonify({'error': '无效的邮箱地址'}), 400
+        
+        # 创建订阅记录
         subscription_id = db_manager.add_subscription(
-            user_id=data['user_id'],
+            email=data['email'],
             topic=data['topic'],
-            frequency=data.get('frequency', 'daily'),
-            format=data['format'],
-            email=data.get('email'),
-            webhook_url=data.get('webhook_url'),
-            wechat_id=data.get('wechat_id')
+            frequency=data.get('frequency', 'daily')
         )
         
-        return jsonify({
-            'id': subscription_id,
-            'message': 'Subscription created successfully'
-        })
+        # 发送确认邮件
+        if send_confirmation_email(data['email'], data['topic']):
+            return jsonify({
+                'id': subscription_id,
+                'message': '订阅创建成功，确认邮件已发送'
+            })
+        else:
+            return jsonify({
+                'id': subscription_id,
+                'message': '订阅创建成功，但确认邮件发送失败'
+            })
+            
     except Exception as e:
-        logger.error(f"Error creating subscription: {e}", exc_info=True)
+        logger.error(f"创建订阅失败: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/subscriptions/<int:subscription_id>', methods=['DELETE'])
